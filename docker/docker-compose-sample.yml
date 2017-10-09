@@ -1,0 +1,82 @@
+version: '3'
+
+services:
+
+#Main Site
+  wardrobistaweb:
+    image: sf/sf:latest
+    ports: 
+      - 7001:7001
+    volumes:
+      - ../:/home/app
+    environment:
+      - NGINX_PORT=7001
+      - SF_REDIS=sfredis
+      - SF_CACHE=redis=sfredis
+      - SF_MYSQL=mysql://sf:sf1234567890@sfmysql/sf
+    networks:
+      - front
+      - back
+      - db
+
+#storage
+  sf_storage:
+    image: minio/minio:latest
+    volumes:
+     - ./storage/data:/data
+     - ./storage/config:/root/.minio
+    ports:
+     - 9000:9000
+    environment:
+     - MINIO_ACCESS_KEY=sf_storage
+     - MINIO_SECRET_KEY=sf_storage1234567890
+    networks:
+     - front
+     - back
+    command: server /data
+
+# For CACHE
+  sfredis:
+    image: redis:latest
+    container_name: sfredis
+    ports: 
+      - 6379
+    networks:
+      - back
+
+# For mysql
+  sfmysql:
+    image: bitnami/mariadb:latest
+    container_name: sfmysql
+    volumes:
+      -  ./mysql/mariadb-persistence:/bitnami
+    environment:
+      - MARIADB_ROOT_USER=sf
+      - MARIADB_ROOT_PASSWORD=sf1234567890
+      - MARIADB_DATABASE=sf
+    networks:
+      - db
+
+# For Mysql ADMIN panel , production will close
+  sf-phpmyadmin:
+     image: phpmyadmin/phpmyadmin:latest
+     networks:
+       - front
+       - back
+       - db
+     ports:
+       - 7101:80
+     environment:
+       - PMA_HOSTS=sf
+       - PMA_ARBITRARY=1
+       - PMA_USER=sf
+       - PMA_PASSWORD=sf1234567890
+
+
+networks:
+  db:
+    driver: bridge
+  front:
+    driver: bridge
+  back:
+    driver: bridge
