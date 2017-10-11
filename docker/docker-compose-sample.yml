@@ -3,8 +3,8 @@ version: '3'
 services:
 
 #Main Site
-  wardrobistaweb:
-    image: sf/sf:latest
+  sf_web:
+    image: extralam/nginx-alpine-php7:latest
     ports: 
       - 7001:7001
     volumes:
