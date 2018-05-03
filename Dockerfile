@@ -1,11 +1,19 @@
-FROM nginx:1.13.5-alpine
+FROM alpine:3.7
 
 MAINTAINER info@solutionforest.net
+
+# trust this project public key to trust the packages.
+ADD https://php.codecasts.rocks/php-alpine.rsa.pub /etc/apk/keys/php-alpine.rsa.pub
+## you may join the multiple run lines here to make it a single layer
+# make sure you can use HTTPS
+RUN apk --update add ca-certificates
+# add the repository, make sure you replace the correct versions if you want.
+RUN echo "@php https://php.codecasts.rocks/v3.7/php-7.2" >> /etc/apk/repositories
 
 # Install php
 RUN apk update && \
     apk upgrade && \
-    apk add --update libressl libressl-dev libssl1.0 supervisor \
+    apk add --update libressl libressl-dev libssl1.0 supervisor nginx redis curl\
     php7 \
     php7-fpm \
     php7-pdo_mysql \
@@ -29,7 +37,7 @@ RUN apk update && \
     php7-xsl \
     php7-xml \
     php7-mongodb \
-    php7-imagick \
+    #php7-imagick \
     --repository http://dl-cdn.alpinelinux.org/alpine/edge/main/ \
     --repository http://dl-cdn.alpinelinux.org/alpine/edge/community/ \
     --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing/ && \
@@ -56,6 +64,7 @@ COPY docker/config/php.ini /etc/php7/php.ini
 
 # Configure supervisord
 COPY docker/config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY docker/config/crontab.txt /etc/crontab.txt
 
 # init scrip
 COPY docker/init_script.sh /init_script.sh
@@ -66,5 +75,7 @@ RUN mkdir -p /home/app
 WORKDIR /home/app
 COPY . /home/app
 RUN rm -Rf /home/app/.git
+
+EXPOSE 80
 
 CMD ["/bin/sh", "/init_script.sh"]
